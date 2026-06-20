@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking System — Greedy Algorithm Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --surface2:  #22263a;
+  --border:    rgba(255,255,255,0.08);
+  --border2:   rgba(255,255,255,0.14);
+  --text:      #e8eaf0;
+  --muted:     #7b80a0;
+  --accent:    #4f7cff;
+  --accent-dim:#1e2d5a;
+  --green:     #2dd4a0;
+  --green-dim: #0d3328;
+  --amber:     #f4a135;
+  --amber-dim: #3a2508;
+  --red:       #f06060;
+  --red-dim:   #3a1010;
+  --purple:    #a78bfa;
+  --purple-dim:#2d2060;
+  --mono:      'JetBrains Mono', monospace;
+  --sans:      'Inter', sans-serif;
+  --radius:    10px;
+  --radius-lg: 16px;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 36px; height: 36px; background: var(--accent);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.header-title { font-size: 15px; font-weight: 600; }
+.header-sub { font-size: 12px; color: var(--muted); }
+.header-stats { display: flex; gap: 20px; }
+.hstat { text-align: right; }
+.hstat-val { font-size: 20px; font-weight: 600; line-height: 1; }
+.hstat-lbl { font-size: 11px; color: var(--muted); }
+.hstat-val.green { color: var(--green); }
+.hstat-val.amber { color: var(--amber); }
+
+/* ── Layout ───────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 60px);
+}
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+}
+.main {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* ── Section titles ───────────────────────────────────────── */
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+/* ── Form elements ────────────────────────────────────────── */
+.field { margin-bottom: 0.875rem; }
+.field label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.field input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  transition: border-color 0.15s;
+  outline: none;
+}
+.field input:focus { border-color: var(--accent); }
+.field input::placeholder { color: var(--muted); }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  transition: opacity 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center; }
+.btn-primary:hover { opacity: 0.88; }
+.btn-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(45,212,160,0.3); padding: 6px 14px; }
+.btn-green:hover { background: rgba(45,212,160,0.15); }
+.btn-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,96,96,0.3); padding: 6px 14px; }
+.btn-red:hover { background: rgba(240,96,96,0.15); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border2); padding: 7px 14px; }
+.btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+.btn-sm { padding: 5px 11px; font-size: 12px; }
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-bottom: 1.5rem;
+}
+.tab {
+  flex: 1;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 7px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+/* ── Badges ───────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-booking { background: var(--purple-dim); color: var(--purple); }
+.badge-active  { background: var(--green-dim);  color: var(--green); }
+.badge-expired { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+/* ── Alert ────────────────────────────────────────────────── */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-bottom: 1rem;
+  display: none;
+}
+.alert.show { display: block; }
+.alert-success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(45,212,160,0.25); }
+.alert-error   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(240,96,96,0.25); }
+.alert-info    { background: var(--accent-dim); color: #a0b8ff;     border: 1px solid rgba(79,124,255,0.25); }
+
+/* ── Ticket box ───────────────────────────────────────────── */
+.ticket {
+  background: var(--bg);
+  border: 1px dashed var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  text-align: center;
+  display: none;
+}
+.ticket.show { display: block; }
+.ticket-num {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin: 8px 0;
+}
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.ticket-row span:first-child { color: var(--muted); }
+.ticket-row span:last-child  { font-weight: 500; }
+
+/* ── Floor map ────────────────────────────────────────────── */
+.floor-wrap { margin-bottom: 1.25rem; }
+.floor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.floor-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+.even-tag { background: var(--accent-dim); color: #a0b8ff; }
+.odd-tag  { background: var(--amber-dim);  color: var(--amber); }
+.lift-tag {
+  font-size: 10px;
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.floor-info { font-size: 11px; color: var(--muted); margin-left: auto; }
+.slots-row { display: flex; gap: 6px; }
+.slot {
+  flex: 1;
+  aspect-ratio: 1.6;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--mono);
+  cursor: default;
+  transition: transform 0.2s;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+.slot-free    { background: var(--green-dim);   color: var(--green);  border-color: rgba(45,212,160,0.2); }
+.slot-taken   { background: var(--amber-dim);   color: var(--amber);  border-color: rgba(244,161,53,0.2); }
+.slot-hl      { background: var(--accent-dim);  color: #a0b8ff;       border-color: rgba(79,124,255,0.5); transform: scale(1.06); }
+.slot-label   { font-size: 8px; opacity: 0.75; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+
+/* ── Table ────────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.mono { font-family: var(--mono); font-size: 12px; }
+
+/* ── Algorithm trace ──────────────────────────────────────── */
+.trace-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.trace-step:last-child { border-bottom: none; }
+.trace-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.step-done    .trace-dot { background: var(--muted); }
+.step-found   .trace-dot { background: var(--green); }
+.step-scan    .trace-dot { background: var(--amber); }
+.step-full    .trace-dot { background: var(--red); }
+.step-done    { color: var(--muted); }
+.step-found   { color: var(--green); font-weight: 600; }
+.step-scan    { color: var(--text); }
+.step-full    { color: var(--red); }
+
+/* ── Pseudocode block ─────────────────────────────────────── */
+.code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 2;
+  color: var(--text);
+}
+.kw   { color: var(--purple); }
+.cm   { color: var(--muted); font-style: italic; }
+.fn   { color: var(--green); }
+.str  { color: var(--amber); }
+
+/* ── Legend ───────────────────────────────────────────────── */
+.legend { display: flex; gap: 16px; font-size: 12px; flex-wrap: wrap; margin-top: 1rem; }
+.legend-item { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+/* ── Page sections ────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Divider ──────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+
+/* ── Toast ────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.25s;
+  pointer-events: none;
+  z-index: 999;
+  max-width: 320px;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">🅿</div>
+    <div>
+      <div class="header-title">Smart Parking System</div>
+      <div class="header-sub">Greedy Algorithm Demo · Binus Anggrek Campus</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat">
+      <div class="hstat-val green" id="h-free">—</div>
+      <div class="hstat-lbl">Free slots</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val amber" id="h-taken">—</div>
+      <div class="hstat-lbl">Occupied</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="h-total">24</div>
+      <div class="hstat-lbl">Total slots</div>
+    </div>
+  </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT SIDEBAR: Driver panel (always visible) -->
+  <aside class="sidebar">
+    <div class="section-title">Driver panel</div>
+
+    <!-- Register -->
+    <div class="card">
+      <div class="card-title">🚗 Register vehicle</div>
+      <div id="reg-alert" class="alert"></div>
+      <div class="field">
+        <label>Full name</label>
+        <input id="reg-name" type="text" placeholder="e.g. Budi Santoso">
+      </div>
+      <div class="field">
+        <label>License plate</label>
+        <input id="reg-plate" type="text" placeholder="e.g. B 1234 XYZ">
+      </div>
+      <button class="btn btn-primary" onclick="registerDriver()">🎫 Get parking ticket</button>
+    </div>
+
+    <!-- Ticket output -->
+    <div class="ticket" id="ticket-box">
+      <div style="font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">Parking ticket</div>
+      <div class="ticket-num" id="t-id">—</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px" id="t-name">—</div>
+      <div class="ticket-row"><span>Plate</span><span class="mono" id="t-plate">—</span></div>
+      <div class="ticket-row"><span>Floor</span><span id="t-floor">—</span></div>
+      <div class="ticket-row"><span>Area</span><span id="t-area">—</span></div>
+      <div class="ticket-row"><span>Slot ID</span><span id="t-slot">—</span></div>
+      <div class="ticket-row"><span>Status</span><span id="t-status">—</span></div>
+      <div style="margin-top:.75rem;font-size:11px;color:var(--muted)">Show this ticket ID to the attendant at the gate.</div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Find ticket -->
+    <div class="card">
+      <div class="card-title">🔍 Look up ticket by plate</div>
+      <div class="field">
+        <input id="find-plate" type="text" placeholder="Enter license plate…">
+      </div>
+      <button class="btn btn-ghost" style="width:100%" onclick="findTicket()">Search</button>
+      <div id="find-result" style="margin-top:.75rem"></div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Paper reference -->
+    <div style="font-size:11px;color:var(--muted);line-height:1.7;padding:.75rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)">
+      <strong style="color:var(--text)">Paper reference</strong><br>
+      Saputri et al. (2025). <em>Parking System Application Using a Greedy Algorithm Approach.</em>
+      Jurnal EMACS, Vol.7 No.1, pp. 7–14.
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('admin', this)">🛡 Admin</button>
+      <button class="tab" onclick="switchTab('floors', this)">🏢 Floor map</button>
+      <button class="tab" onclick="switchTab('algorithm', this)">⚙ Algorithm trace</button>
+      <button class="tab" onclick="switchTab('pseudocode', this)">📄 Pseudocode</button>
+    </div>
+
+    <!-- ADMIN TAB -->
+    <div id="page-admin" class="page active">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+        <div class="section-title" style="margin-bottom:0">All tickets</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="admin-search" type="text" placeholder="Search ticket, plate, name…"
+            oninput="renderAdmin()"
+            style="padding:7px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:13px;width:240px;outline:none">
+          <button class="btn btn-ghost btn-sm" onclick="resetDemo()">↺ Reset demo</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Name</th>
+              <th>Plate</th>
+              <th>Floor</th>
+              <th>Area</th>
+              <th>Time in</th>
+              <th>Time out</th>
+              <th>Fee (Rp)</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:.75rem;font-size:12px;color:var(--muted)">
+        Fee rate: Rp 3,000 / minute · Action IN starts the clock · Action OUT calculates and frees the slot.
+      </div>
+    </div>
+
+    <!-- FLOORS TAB -->
+    <div id="page-floors" class="page">
+      <div class="section-title">Floor map — greedy fill order</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.5rem;max-width:640px">
+        The greedy algorithm scans floors in the order below. Even floors (2, 4, 6) come first because 
+        they have elevator access nearest the campus entrance. Odd floors (1, 3, 5) are used only when all even floors are full.
+      </p>
+      <div id="floors-display"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green-dim);border:1px solid rgba(45,212,160,0.3)"></div> Free slot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber-dim);border:1px solid rgba(244,161,53,0.3)"></div> Occupied slot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent-dim);border:1px solid rgba(79,124,255,0.5)"></div> Last assigned</div>
+      </div>
+    </div>
+
+    <!-- ALGORITHM TRACE TAB -->
+    <div id="page-algorithm" class="page">
+      <div class="section-title">Algorithm trace</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:1.25rem">
+        Each time a driver registers, the greedy algorithm logs its decisions here. Register a driver on the left to see a fresh trace.
+      </p>
+      <div class="card" id="algo-trace-box">
+        <div style="color:var(--muted);font-size:13px;text-align:center;padding:1rem">
+          No allocation yet — register a driver to see the trace.
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem">
+        <div class="section-title">How the greedy logic works</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:.5rem">
+          <div class="card" style="text-align:center">
+            <div style="font-size:24px;margin-bottom:.5rem">1️⃣</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:.25rem">Scan even floors</div>
+            <div style="font-size:12px;color:var(--muted)">Check floors 2 → 4 → 6 for any free slot. Stop at the first one found.</div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div style="font-size:24px;margin-bottom:.5rem">2️⃣</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:.25rem">Fall back to odd</div>
+            <div style="font-size:12px;color:var(--muted)">Only if all even floors are full, scan floors 1 → 3 → 5.</div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div style="font-size:24px;margin-bottom:.5rem">3️⃣</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:.25rem">Assign & return</div>
+            <div style="font-size:12px;color:var(--muted)">Link the slot to the driver's ticket. If completely full, reject the request.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PSEUDOCODE TAB -->
+    <div id="page-pseudocode" class="page">
+      <div class="section-title">Pseudocode — directly from the paper</div>
+
+      <div class="card">
+        <div class="card-title">Step 1 — find a parking slot (greedy selection)</div>
+        <div class="code-block">
+<span class="cm">// Scan floors that have an elevator (even floors) first</span><br>
+<span class="kw">for</span> (i = 0; i &lt; floorHaveElevator; i++) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (parking[i] == <span class="str">null</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> parking[i];  <span class="cm">// first free slot found → done</span><br>
+&nbsp;&nbsp;}<br>
+}<br>
+<span class="kw">return</span> <span class="str">null</span>;  <span class="cm">// no even floor slot found → try odd floors next</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 2 — assign driver to the slot</div>
+        <div class="code-block">
+<span class="cm">// Write driver data into the selected parking slot</span><br>
+<span class="kw">for</span> (i = 0; i &lt; sizeParkir; i++) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (parking[i].tiketID == tiketID) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">set</span> parking[i] = driver;  <span class="cm">// bind slot → driver</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span>;<br>
+&nbsp;&nbsp;}<br>
+}<br>
+<span class="kw">return</span> <span class="str">null</span>;
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 3 — exit: calculate fee & free the slot</div>
+        <div class="code-block">
+<span class="cm">// Driver exits; compute price and reset the slot to available</span><br>
+<span class="kw">for</span> (i = 0; i &lt; sizeParkir; i++) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (parking[i].tiketID == tiketID) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">calculateParkingPrice</span>();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm">// price = (timeOut − timeIn) × ratePerMinute</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">setParkingAreaToAvailable</span>();  <span class="cm">// slot.tiketID = NULL</span><br>
+&nbsp;&nbsp;}<br>
+}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Database design — 3 tables (from the paper)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase">Parking table</div>
+            <div class="code-block" style="font-size:11px;line-height:1.9">
+              <span class="kw">parkirID</span>  PK<br>
+              ticketID  FK<br>
+              pengemudiID FK<br>
+              area<br>
+              lantai (floor)
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase">Customer table</div>
+            <div class="code-block" style="font-size:11px;line-height:1.9">
+              <span class="kw">pengemudiID</span> PK<br>
+              name<br>
+              platNomor<br>
+              ticketID FK
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:.5rem;text-transform:uppercase">Ticket table</div>
+            <div class="code-block" style="font-size:11px;line-height:1.9">
+              <span class="kw">tiketID</span>   PK<br>
+              tgl_masuk<br>
+              tgl_keluar<br>
+              status<br>
+              harga (price)
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:.75rem;font-size:12px;color:var(--muted)">
+          A NULL ticketID in the Parking table = free slot. A non-NULL value = occupied. The system sets it back to NULL when the driver exits.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── Data model ──────────────────────────────────────────────
+const RATE_PER_MIN = 3000;
+const FLOOR_ORDER  = [2, 4, 6, 1, 3, 5]; // greedy scan order
+const AREAS        = ['A1', 'A2', 'B1', 'B2'];
+
+let parking   = [];   // [{parkirID, lantai, area, ticketID, pengemudiID}]
+let customers = [];   // [{pengemudiID, name, platNomor, tiketID}]
+let tickets   = [];   // [{tiketID, tgl_masuk, tgl_keluar, status, harga}]
+let nextTid   = 1;
+let lastHL    = null; // last highlighted slot
+let lastTrace = [];   // last greedy trace steps
+
+function initParking() {
+  parking = [];
+  let pid = 1;
+  FLOOR_ORDER.forEach(f => {
+    AREAS.forEach(a => {
+      parking.push({ parkirID: pid++, lantai: f, area: a, ticketID: null, pengemudiID: null });
+    });
+  });
+}
+
+// ── Greedy algorithm ────────────────────────────────────────
+function greedyFind(trace) {
+  trace.push({ cls: 'step-done', text: 'Algorithm starts. Scanning even floors first (elevator priority)…' });
+
+  // Pass 1: even floors in order 2 → 4 → 6
+  const evenFloors = FLOOR_ORDER.filter(f => f % 2 === 0);
+  for (const floor of evenFloors) {
+    const slotsOnFloor = parking.filter(p => p.lantai === floor);
+    for (const slot of slotsOnFloor) {
+      const free = slot.ticketID === null;
+      trace.push({
+        cls: free ? 'step-found' : 'step-scan',
+        text: `Floor ${floor} (even, has elevator) · Area ${slot.area} · Slot #${slot.parkirID} → ${free ? '✅ FREE — assign here!' : '❌ occupied'}`
+      });
+      if (free) return slot;
+    }
+  }
+
+  trace.push({ cls: 'step-done', text: 'All even floors full. Falling back to odd floors…' });
+
+  // Pass 2: odd floors in order 1 → 3 → 5
+  const oddFloors = FLOOR_ORDER.filter(f => f % 2 !== 0);
+  for (const floor of oddFloors) {
+    const slotsOnFloor = parking.filter(p => p.lantai === floor);
+    for (const slot of slotsOnFloor) {
+      const free = slot.ticketID === null;
+      trace.push({
+        cls: free ? 'step-found' : 'step-scan',
+        text: `Floor ${floor} (odd) · Area ${slot.area} · Slot #${slot.parkirID} → ${free ? '✅ FREE — assign here!' : '❌ occupied'}`
+      });
+      if (free) return slot;
+    }
+  }
+
+  trace.push({ cls: 'step-full', text: '🚫 Parking lot is completely full. Cannot accept new vehicle.' });
+  return null;
+}
+
+// ── Registration ────────────────────────────────────────────
+function registerDriverData(name, plate, silent) {
+  // Check for existing active ticket
+  const existing = customers.find(c => {
+    if (c.platNomor !== plate.toUpperCase()) return false;
+    const t = tickets.find(x => x.tiketID === c.tiketID);
+    return t && t.status !== 'expired';
+  });
+  if (existing) return { error: 'This plate already has an active or booking ticket.' };
+
+  const trace = [];
+  const slot = greedyFind(trace);
+  if (!slot) return { error: 'Parking lot is full. No slots available.' };
+
+  const tid = nextTid++;
+  const customer = { pengemudiID: customers.length + 1, name, platNomor: plate.toUpperCase(), tiketID: tid };
+  const ticket   = { tiketID: tid, tgl_masuk: null, tgl_keluar: null, status: 'booking', harga: null };
+
+  slot.ticketID    = tid;
+  slot.pengemudiID = customer.pengemudiID;
+
+  customers.push(customer);
+  tickets.push(ticket);
+
+  lastHL    = slot.parkirID;
+  lastTrace = trace;
+
+  return { tid, slot, customer, ticket };
+}
+
+function registerDriver() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const plate = document.getElementById('reg-plate').value.trim();
+  const alert = document.getElementById('reg-alert');
+
+  if (!name || !plate) {
+    showAlert(alert, 'error', 'Please enter both name and license plate.');
+    return;
+  }
+
+  const res = registerDriverData(name, plate, false);
+  if (res.error) {
+    showAlert(alert, 'error', res.error);
+    hideTicket();
+    return;
+  }
+
+  showAlert(alert, 'success', `Ticket #${res.tid} issued! Floor ${res.slot.lantai}, area ${res.slot.area}.`);
+  showTicket(res.tid);
+  renderAll();
+
+  document.getElementById('reg-name').value  = '';
+  document.getElementById('reg-plate').value = '';
+}
+
+// ── Admin actions ───────────────────────────────────────────
+function actionIn(tid) {
+  const t = tickets.find(x => x.tiketID === tid);
+  if (!t || t.status !== 'booking') return;
+  t.tgl_masuk = new Date();
+  t.status = 'active';
+  toast(`✅ Action IN recorded for ticket #${tid}`);
+  renderAll();
+}
+
+function actionOut(tid) {
+  const t = tickets.find(x => x.tiketID === tid);
+  if (!t || t.status !== 'active') return;
+  t.tgl_keluar = new Date();
+  const mins = Math.max(1, Math.round((t.tgl_keluar - t.tgl_masuk) / 60000));
+  t.harga  = mins * RATE_PER_MIN;
+  t.status = 'expired';
+
+  const slot = parking.find(x => x.ticketID === tid);
+  if (slot) { slot.ticketID = null; slot.pengemudiID = null; }
+
+  toast(`💰 Fee: Rp ${t.harga.toLocaleString('id-ID')} · Slot freed.`);
+  renderAll();
+}
+
+function findTicket() {
+  const q   = document.getElementById('find-plate').value.trim().toUpperCase();
+  const el  = document.getElementById('find-result');
+  const c   = customers.find(x => x.platNomor === q);
+  if (!c) { el.innerHTML = `<div class="alert alert-error show">No ticket found for plate <strong>${q}</strong>.</div>`; return; }
+  const t = tickets.find(x => x.tiketID === c.tiketID);
+  const p = parking.find(x => x.ticketID === c.tiketID);
+  if (!t || t.status === 'expired') {
+    el.innerHTML = `<div class="alert alert-error show">No active ticket for <strong>${q}</strong>.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="alert alert-info show">Ticket <strong>#${c.tiketID}</strong> · ${t.status} · Floor ${p ? p.lantai : '?'} · Area ${p ? p.area : '?'}</div>`;
+}
+
+// ── Render functions ────────────────────────────────────────
+function renderAdmin() {
+  const q     = (document.getElementById('admin-search').value || '').toLowerCase();
+  const tbody = document.getElementById('admin-tbody');
+
+  const rows = tickets.filter(t => {
+    const c = customers.find(x => x.tiketID === t.tiketID);
+    if (!c) return false;
+    if (!q) return true;
+    return String(t.tiketID).includes(q) || c.platNomor.toLowerCase().includes(q) || c.name.toLowerCase().includes(q);
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:1.5rem">No records found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(t => {
+    const c    = customers.find(x => x.tiketID === t.tiketID) || {};
+    const slot = parking.find(x => x.ticketID === t.tiketID);
+
+    let actions = '';
+    if      (t.status === 'booking') actions = `<button class="btn btn-green btn-sm" onclick="actionIn(${t.tiketID})">Action IN</button>`;
+    else if (t.status === 'active')  actions = `<button class="btn btn-red btn-sm"   onclick="actionOut(${t.tiketID})">Action OUT</button>`;
+    else                             actions = `<span style="color:var(--muted);font-size:12px">Done</span>`;
+
+    return `<tr>
+      <td><strong>#${t.tiketID}</strong></td>
+      <td>${c.name || '—'}</td>
+      <td class="mono">${c.platNomor || '—'}</td>
+      <td>${slot ? 'Floor ' + slot.lantai : '—'}</td>
+      <td>${slot ? slot.area : '—'}</td>
+      <td>${fmt(t.tgl_masuk)}</td>
+      <td>${fmt(t.tgl_keluar)}</td>
+      <td class="mono">${t.harga ? 'Rp ' + t.harga.toLocaleString('id-ID') : '—'}</td>
+      <td><span class="badge badge-${t.status}">${t.status}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderFloors() {
+  const container = document.getElementById('floors-display');
+  container.innerHTML = FLOOR_ORDER.map(f => {
+    const isEven = f % 2 === 0;
+    const slots  = parking.filter(p => p.lantai === f);
+    const free   = slots.filter(s => s.ticketID === null).length;
+
+    const slotsHtml = slots.map(s => {
+      const isTaken = s.ticketID !== null;
+      const isHL    = s.parkirID === lastHL;
+      const c       = isTaken ? customers.find(x => x.tiketID === s.ticketID) : null;
+      const cls     = isHL ? 'slot-hl' : isTaken ? 'slot-taken' : 'slot-free';
+      const label   = isTaken && c ? c.platNomor.split(' ').pop() : 'FREE';
+      const sub     = isTaken && c ? c.name.split(' ')[0] : '';
+      return `<div class="slot ${cls}" title="${isTaken ? (c ? c.name : 'Taken') : 'Available — Slot #' + s.parkirID}">
+        ${label}
+        ${sub ? `<div class="slot-label">${sub}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="floor-wrap">
+      <div class="floor-header">
+        <span class="floor-tag ${isEven ? 'even-tag' : 'odd-tag'}">Floor ${f}</span>
+        <span class="lift-tag">${isEven ? '🛗 elevator priority' : 'secondary'}</span>
+        <span class="floor-info">${free}/${slots.length} free</span>
+      </div>
+      <div style="display:flex;gap:6px">${slotsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderAlgo() {
+  const box = document.getElementById('algo-trace-box');
+  if (!lastTrace.length) return;
+  box.innerHTML = lastTrace.map(s =>
+    `<div class="trace-step ${s.cls}">
+      <div class="trace-dot"></div>
+      <div>${s.text}</div>
+    </div>`
+  ).join('');
+}
+
+function renderStats() {
+  const free  = parking.filter(p => p.ticketID === null).length;
+  const taken = parking.filter(p => p.ticketID !== null).length;
+  document.getElementById('h-free').textContent  = free;
+  document.getElementById('h-taken').textContent = taken;
+}
+
+function renderAll() {
+  renderAdmin();
+  renderFloors();
+  renderStats();
+  renderAlgo();
+}
+
+// ── Ticket display ──────────────────────────────────────────
+function showTicket(tid) {
+  const t = tickets.find(x => x.tiketID === tid);
+  const c = customers.find(x => x.tiketID === tid);
+  const p = parking.find(x => x.ticketID === tid);
+  if (!t || !c || !p) return;
+
+  document.getElementById('t-id').textContent     = '#' + String(tid).padStart(3, '0');
+  document.getElementById('t-name').textContent   = c.name;
+  document.getElementById('t-plate').textContent  = c.platNomor;
+  document.getElementById('t-floor').textContent  = 'Floor ' + p.lantai;
+  document.getElementById('t-area').textContent   = p.area;
+  document.getElementById('t-slot').textContent   = '#' + p.parkirID;
+  document.getElementById('t-status').innerHTML   = `<span class="badge badge-${t.status}">${t.status}</span>`;
+  document.getElementById('ticket-box').classList.add('show');
+}
+function hideTicket() {
+  document.getElementById('ticket-box').classList.remove('show');
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'floors')    renderFloors();
+  if (name === 'admin')     renderAdmin();
+  if (name === 'algorithm') renderAlgo();
+}
+
+function showAlert(el, type, msg) {
+  el.className = `alert alert-${type} show`;
+  el.textContent = msg;
+  setTimeout(() => { el.classList.remove('show'); }, 4000);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function fmt(d) {
+  if (!d) return '—';
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function resetDemo() {
+  initParking();
+  customers = []; tickets = []; nextTid = 1; lastHL = null; lastTrace = [];
+  hideTicket();
+  document.getElementById('admin-search').value = '';
+  document.getElementById('algo-trace-box').innerHTML =
+    `<div style="color:var(--muted);font-size:13px;text-align:center;padding:1rem">No allocation yet — register a driver to see the trace.</div>`;
+  initDummies();
+  renderAll();
+  toast('↺ Demo reset with fresh dummy data.');
+}
+
+// ── Seed dummy data ─────────────────────────────────────────
+function initDummies() {
+  const dummies = [
+    { name: 'Andre Wijaya',   plate: 'B 1111 HGD' },
+    { name: 'Adi Susanto',    plate: 'B 2222 XYZ' },
+    { name: 'Nicky Tanaka',   plate: 'B 3333 THW' },
+    { name: 'Tea Rahmawati',  plate: 'B 1811 UJW' },
+    { name: 'Raymond Candra', plate: 'B 1234 QUA' },
+  ];
+  dummies.forEach(d => registerDriverData(d.name, d.plate, true));
+  // Check in first two drivers (active)
+  if (tickets[0]) actionInSilent(tickets[0].tiketID);
+  if (tickets[1]) actionInSilent(tickets[1].tiketID);
+  // Clear trace — we want a clean slate visually
+  lastHL    = null;
+  lastTrace = [];
+}
+
+function actionInSilent(tid) {
+  const t = tickets.find(x => x.tiketID === tid);
+  if (!t || t.status !== 'booking') return;
+  t.tgl_masuk = new Date(Date.now() - Math.floor(Math.random() * 45 + 10) * 60000);
+  t.status = 'active';
+}
+
+// ── Boot ────────────────────────────────────────────────────
+initParking();
+initDummies();
+renderAll();
+</script>
+</body>
+</html>
